@@ -302,3 +302,67 @@ sudo kubebuilder/bin/kubectl get all -A
 11. Start kubelet
 12. Start controller manager
 13. Verify setup
+
+## How to resolve nginx pod start issue
+
+### Add aliases for convinience
+```bash
+alias k='sudo kubebuilder/bin/kubectl'
+alias kns='sudo kubebuilder/bin/kubectl get namespaces'
+alias kgp='sudo kubebuilder/bin/kubectl get pods'
+```
+
+### Get pods to see status
+We can see Pending status for nginx pod:
+```bash
+kgp
+
+NAME                    READY   STATUS    RESTARTS   AGE
+demo-677cfb9d49-89lsp   0/1     Pending   0          6m25s
+```
+
+### Describe pending pod
+We can see 0/1 nodes are available: 1 node(s) had untolerated taint:
+```bash
+k describe pod demo
+
+Name:             demo-677cfb9d49-89lsp
+Namespace:        default
+...
+Node:             codespaces-bcb9b6/10.0.1.103
+...
+Conditions:
+  Type           Status
+  PodScheduled   False 
+...
+Events:
+  Type     Reason            Age                    From               Message
+  ----     ------            ----                   ----               -------
+  Warning  FailedScheduling  3m23s (x2 over 8m33s)  default-scheduler  0/1 nodes are available: 1 node(s) had untolerated taint {node.cloudprovider.kubernetes.io/uninitialized: true}. preemption: 0/1 nodes are available: 1 Preemption is not helpful for scheduling.
+```
+
+### Fixing pod
+default-scheduler cannot schedule a pod because node has such marker:
+```bash
+k describe node codes | grep Taints
+Taints:             node.cloudprovider.kubernetes.io/uninitialized=true:NoSchedule
+```
+To fix this, run:
+```bash
+k taint node codespaces-bcb9b6 node.cloudprovider.kubernetes.io/uninitialized:NoSchedule-
+
+node/codespaces-bcb9b6 untainted
+```
+Now our node has no taints:
+```bash
+k describe node codes | grep Taints
+
+Taints:             <none>
+```
+Verify the result:
+```bash
+kgp
+
+NAME                    READY   STATUS    RESTARTS   AGE
+demo-677cfb9d49-89lsp   1/1     Running   0          33m
+```
