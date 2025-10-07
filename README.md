@@ -366,3 +366,44 @@ kgp
 NAME                    READY   STATUS    RESTARTS   AGE
 demo-677cfb9d49-89lsp   1/1     Running   0          33m
 ```
+
+## Week 1 Lab
+
+1. Generate 4 manifests for etcd, kube-apiserver, kube-scheduler and kube-controller-manager
+2. Start control plane using kubelet staticPod
+3. Create custom deployment (i.e. nginx) for 3 replicas
+
+### Run setup
+Download all tools, create certs, etc.
+```bash
+./setup.sh start
+```
+Ensure node is Ready
+```bash
+k get nodes
+```
+Will show like:
+```
+NAME                STATUS   ROLES    AGE   VERSION
+codespaces-bcb9b6   Ready    <none>   32s   v1.30.0
+```
+Kill etcd, kube-apiserver, kube-scheduler, kube-controller-manager:
+```bash
+sudo pkill -f etcd
+sudo pkill -f kube-apiserver
+sudo pkill -f kube-controller-manager
+sudo pkill -f kube-scheduler
+```
+Ensure kubelet and containerd is running
+```bash
+pgrep -fa kubelet
+pgrep -fa containerd
+```
+You can use containerd.sh and kubelet.sh to start these services
+
+Run create manifest script
+```bash
+./create-manifest.sh
+```
+Create deployment with 3 replicas
+sudo  kubebuilder/bin/kubectl create deploy demo --image nginx --replicas=3
